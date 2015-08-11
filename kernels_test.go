@@ -37,6 +37,6 @@ func TestKernelGaussian(t *testing.T) {
 
 func BenchmarkKernelGaussian(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = KernelGaussian(float32(i), float32(i))
+		_ = KernelGaussian(float64(i), float64(i))
 	}
 }
