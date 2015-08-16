@@ -7,27 +7,17 @@ import (
 )
 
 type NWSmoother struct {
-	Weights [][]float64
-	Kernel  func(float64, float64) float64
-	Radius  int //speed up computation by ignoring points outside the Radius.
+	Bandwidth float64
+	Radius    int
+	Kernel    func(float64, float64) float64
 }
 
 //Allocates a new Nadraya-Watson kernel smoother using gaussian kernel
-//It's your responsibility to make sure the kernel is valid
-//Passing the requisite density (must be in (0.0,1.0) range) significantly speeds up smoothing by ignoring distant points
-func NewNWGaussianSmoother(size int, bandwidth float64, density float64) (*NWSmoother, error) {
+func NewNWGaussianSmoother(bandwidth float64, density float64) (*NWSmoother, error) {
 	//Create NWSmoother
 	s := NWSmoother{
-		Kernel: KernelGaussian,
-	}
-
-	//Generate weight matrix
-	s.Weights = make([][]float64, size)
-	for i := 0; i < size; i++ {
-		s.Weights[i] = make([]float64, size)
-		for t := 0; t < size; t++ {
-			s.Weights[i][t] = s.Kernel(float64(t-i), bandwidth/2.0)
-		}
+		Bandwidth: bandwidth,
+		Kernel:    KernelGaussian,
 	}
 
 	//Calculate Radius
@@ -62,8 +52,9 @@ func (s NWSmoother) SmoothPoint(x int, inputs []float64, length int) (float64, e
 	numSum := 0.0
 	denSum := 0.0
 	for i := low; i <= high; i++ {
-		numSum += s.Weights[x][i] * inputs[i]
-		denSum += s.Weights[x][i]
+		weight := s.Kernel(float64(i-x), s.Bandwidth/2.0)
+		numSum += weight * inputs[i]
+		denSum += weight
 	}
 
 	return numSum / denSum, nil
